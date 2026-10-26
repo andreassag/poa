@@ -1,4 +1,8 @@
-# poa: Partial Order Alignment & Variation Graph Engine in Rust
+> [!IMPORTANT]
+> **Archival Notice**
+> This repository is archived and is no longer actively maintained.
+
+# poa: Partial Order Alignment & Variation Graph Engine
 
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
