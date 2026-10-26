@@ -1,6 +1,5 @@
-> [!IMPORTANT]
-> **Archival Notice**
-> This repository is archived and is no longer actively maintained.
+> [!NOTE]
+> **Archive Notice**: This project is an educational and reference implementation of Partial Order Alignment (Sequence-to-DAG) in Rust. It is finished and archived; no active maintenance or feature development is planned.
 
 # poa: Partial Order Alignment & Variation Graph Engine
 
