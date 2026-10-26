@@ -117,29 +117,94 @@ pub fn align_to_graph(graph: &PoaGraph, query: &[u8], params: &PoaParams) -> Poa
     let mut cur_u: Option<usize> = Some(best_node);
     let mut cur_j = best_j;
 
+    let mut cur_state = if dp_m[best_node][best_j] >= dp_d[best_node][best_j] && dp_m[best_node][best_j] >= dp_i[best_node][best_j] {
+        'M'
+    } else if dp_d[best_node][best_j] >= dp_i[best_node][best_j] {
+        'D'
+    } else {
+        'I'
+    };
+
     while let Some(u) = cur_u {
-        if cur_j == 0 && graph.in_edges[u].is_empty() {
-            path.push((Some(u as u32), None));
-            break;
-        }
-
-        path.push((Some(u as u32), Some(cur_j - 1)));
-
-        // Find predecessor
-        let mut pred_u: Option<usize> = None;
-        let mut max_val = -inf;
-
-        for e in &graph.in_edges[u] {
-            let p = e.target as usize;
-            let val = max(dp_m[p][cur_j.saturating_sub(1)], max(dp_d[p][cur_j.saturating_sub(1)], dp_i[p][cur_j.saturating_sub(1)]));
-            if val > max_val {
-                max_val = val;
-                pred_u = Some(p);
+        if cur_state == 'M' {
+            if cur_j == 0 {
+                path.push((Some(u as u32), None));
+                break;
             }
-        }
+            path.push((Some(u as u32), Some(cur_j - 1)));
 
-        cur_u = pred_u;
-        if cur_j > 0 { cur_j -= 1; }
+            if graph.in_edges[u].is_empty() {
+                break;
+            }
+
+            let mut pred_u = None;
+            let mut next_state = 'M';
+            let mut max_val = -inf;
+
+            for e in &graph.in_edges[u] {
+                let p = e.target as usize;
+                let j_prev = cur_j - 1;
+                if dp_m[p][j_prev] > max_val {
+                    max_val = dp_m[p][j_prev];
+                    pred_u = Some(p);
+                    next_state = 'M';
+                }
+                if dp_d[p][j_prev] > max_val {
+                    max_val = dp_d[p][j_prev];
+                    pred_u = Some(p);
+                    next_state = 'D';
+                }
+                if dp_i[p][j_prev] > max_val {
+                    max_val = dp_i[p][j_prev];
+                    pred_u = Some(p);
+                    next_state = 'I';
+                }
+            }
+
+            cur_u = pred_u;
+            cur_j -= 1;
+            cur_state = next_state;
+        } else if cur_state == 'D' {
+            path.push((Some(u as u32), None));
+
+            if graph.in_edges[u].is_empty() {
+                break;
+            }
+
+            let mut pred_u = None;
+            let mut next_state = 'M';
+            let mut max_val = -inf;
+
+            for e in &graph.in_edges[u] {
+                let p = e.target as usize;
+                if dp_m[p][cur_j] + params.gap_open + params.gap_extend > max_val {
+                    max_val = dp_m[p][cur_j] + params.gap_open + params.gap_extend;
+                    pred_u = Some(p);
+                    next_state = 'M';
+                }
+                if dp_d[p][cur_j] + params.gap_extend > max_val {
+                    max_val = dp_d[p][cur_j] + params.gap_extend;
+                    pred_u = Some(p);
+                    next_state = 'D';
+                }
+            }
+
+            cur_u = pred_u;
+            cur_state = next_state;
+        } else {
+            // cur_state == 'I'
+            if cur_j == 0 {
+                break;
+            }
+            path.push((None, Some(cur_j - 1)));
+
+            if dp_m[u][cur_j - 1] + params.gap_open + params.gap_extend >= dp_i[u][cur_j - 1] + params.gap_extend {
+                cur_state = 'M';
+            } else {
+                cur_state = 'I';
+            }
+            cur_j -= 1;
+        }
     }
 
     path.reverse();

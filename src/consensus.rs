@@ -1,6 +1,6 @@
 use crate::graph::PoaGraph;
 
-pub fn extract_consensus(graph: &PoaGraph) -> Vec<u8> {
+pub fn extract_consensus_nodes(graph: &PoaGraph) -> Vec<u32> {
     let n = graph.num_nodes();
     if n == 0 {
         return Vec::new();
@@ -49,14 +49,19 @@ pub fn extract_consensus(graph: &PoaGraph) -> Vec<u8> {
     }
 
     // Backtrace consensus path
-    let mut consensus = Vec::new();
+    let mut nodes = Vec::new();
     let mut cur: Option<u32> = Some(best_end as u32);
 
     while let Some(u) = cur {
-        consensus.push(graph.bases[u as usize]);
+        nodes.push(u);
         cur = parent[u as usize];
     }
 
-    consensus.reverse();
-    consensus
+    nodes.reverse();
+    nodes
+}
+
+pub fn extract_consensus(graph: &PoaGraph) -> Vec<u8> {
+    let nodes = extract_consensus_nodes(graph);
+    nodes.iter().map(|&u| graph.bases[u as usize]).collect()
 }

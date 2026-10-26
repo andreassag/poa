@@ -79,14 +79,53 @@ pub fn export_msa(
 ) -> Result<(), String> {
     let mut file = File::create(path).map_err(|e| format!("Cannot create {}: {}", path, e))?;
 
-    // Export consensus
-    writeln!(file, ">Consensus").map_err(|e| e.to_string())?;
-    writeln!(file, "{}", String::from_utf8_lossy(consensus)).map_err(|e| e.to_string())?;
+    let consensus_nodes = crate::consensus::extract_consensus_nodes(graph);
+    let mut is_consensus_node = vec![false; graph.num_nodes()];
+    for &u in &consensus_nodes {
+        is_consensus_node[u as usize] = true;
+    }
 
-    // Export input records
-    for r in records {
+    // Export row-aligned consensus
+    writeln!(file, ">Consensus").map_err(|e| e.to_string())?;
+    let mut cons_row = String::new();
+    for &u in &graph.topo_order {
+        if is_consensus_node[u as usize] {
+            cons_row.push(graph.bases[u as usize] as char);
+        } else {
+            cons_row.push('-');
+        }
+    }
+    writeln!(file, "{}", cons_row).map_err(|e| e.to_string())?;
+
+    // Determine nodes visited by each input sequence
+    for (s_id, r) in records.iter().enumerate() {
+        let sid = s_id as u32;
+        let mut visited = vec![false; graph.num_nodes()];
+
+        for u in 0..graph.num_nodes() {
+            for e in &graph.out_edges[u] {
+                if e.seq_ids.contains(&sid) {
+                    visited[u] = true;
+                    visited[e.target as usize] = true;
+                }
+            }
+        }
+        // Sequence 0 starts at node 0
+        if sid == 0 && graph.num_nodes() > 0 {
+            visited[0] = true;
+        }
+
+        let mut row = String::new();
+        for &u in &graph.topo_order {
+            if visited[u as usize] {
+                row.push(graph.bases[u as usize] as char);
+            } else {
+                row.push('-');
+            }
+        }
+
         writeln!(file, ">{}", r.name).map_err(|e| e.to_string())?;
-        writeln!(file, "{}", String::from_utf8_lossy(&r.seq)).map_err(|e| e.to_string())?;
+        writeln!(file, "{}", row).map_err(|e| e.to_string())?;
     }
 
     Ok(())
