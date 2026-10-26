@@ -1,0 +1,17 @@
+[package]
+name = "poa"
+version = "1.0.0"
+edition = "2021"
+authors = ["Andreas Sagen"]
+description = "Partial Order Alignment (Sequence-to-DAG) and Variation Graph engine in Rust"
+license = "MIT"
+
+[lib]
+name = "poa"
+path = "src/lib.rs"
+
+[[bin]]
+name = "poa"
+path = "src/main.rs"
+
+[dependencies]
